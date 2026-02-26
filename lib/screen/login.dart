@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../dashboard_klasifikasi.dart'; // Menambahkan '../' untuk naik satu folder
+import 'package:shared_preferences/shared_preferences.dart';
+import '../main.dart'; // Mengarah ke MainNavigation di main.dart
 import 'register_screen.dart'; 
 
 class LoginScreen extends StatefulWidget {
@@ -10,14 +11,18 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Perbaikan: Tambahkan controller
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  void _login() {
+  // FUNGSI LOGIN TEGAS: Simpan status & Pindah ke Navigasi Utama
+  void _login() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true); // Simpan status login permanen
+
+    if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const HomeScreen()), 
+      MaterialPageRoute(builder: (context) => const MainNavigation()), 
     );
   }
 
@@ -28,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _buildHeader(), // Bagian header oval
+            _buildHeader(),
             const SizedBox(height: 30),
             _buildWelcomeText(),
             const SizedBox(height: 40),
@@ -45,7 +50,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Fungsi helper untuk membangun UI (Sesuai desain Figma kamu)
   Widget _buildHeader() {
     return SizedBox(
       height: 380,
@@ -77,9 +81,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildWelcomeText() {
-    return Row(
+    return const Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: const [
+      children: [
         Text('Welcome To ', style: TextStyle(color: Color(0xFF0F703A), fontSize: 24, fontWeight: FontWeight.bold)),
         Text('AgriPadi', style: TextStyle(color: Color(0xFF0F703A), fontSize: 28, fontWeight: FontWeight.bold)),
       ],

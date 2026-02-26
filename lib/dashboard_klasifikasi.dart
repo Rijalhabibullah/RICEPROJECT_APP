@@ -1,6 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart'; // Penting untuk kIsWeb
+
+// Pastikan file result_screen.dart sudah kamu buat di folder lib/screen/
+import 'screen/result_screen.dart'; 
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,22 +14,23 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Variabel untuk menyimpan gambar yang dipilih
   File? _image;
+  XFile? _webImage; // Tambahan untuk handling gambar di Web
   final ImagePicker _picker = ImagePicker();
 
-  // Fungsi untuk mengambil gambar dari Kamera atau Galeri
   Future<void> _getImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(source: source);
-
     if (pickedFile != null) {
       setState(() {
-        _image = File(pickedFile.path);
+        if (kIsWeb) {
+          _webImage = pickedFile;
+        } else {
+          _image = File(pickedFile.path);
+        }
       });
     }
   }
 
-  // Fungsi untuk memunculkan pilihan (Popup Bawah)
   void _showPicker(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -72,10 +77,10 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text(
-          'Deteksi Penyakit Padi',
+          'AgriPadi - Deteksi',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        backgroundColor: Colors.green[700],
+        backgroundColor: const Color(0xFF0F703A),
         centerTitle: true,
         elevation: 0,
       ),
@@ -85,17 +90,15 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              'Unggah atau ambil foto daun padi untuk mendeteksi penyakit dan melihat rekomendasi perawatannya.',
+              'Unggah foto daun padi untuk mendeteksi penyakit secara akurat.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.black54),
             ),
             const SizedBox(height: 30),
             
-            // Area Upload/Preview Gambar
+            // Area Upload Preview
             GestureDetector(
-              onTap: () {
-                _showPicker(context); // Panggil popup saat diklik
-              },
+              onTap: () => _showPicker(context),
               child: Container(
                 height: 300,
                 width: double.infinity,
@@ -105,21 +108,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   border: Border.all(color: Colors.green.shade300, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     ),
                   ],
                 ),
-                child: _image != null
+                child: (_image != null || _webImage != null)
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(18),
-                        child: Image.file(
-                          _image!,
-                          width: double.infinity,
-                          height: 300,
-                          fit: BoxFit.cover,
-                        ),
+                        child: kIsWeb 
+                          ? Image.network(_webImage!.path, width: double.infinity, height: 300, fit: BoxFit.cover)
+                          : Image.file(_image!, width: double.infinity, height: 300, fit: BoxFit.cover),
                       )
                     : Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -143,15 +143,12 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 55,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700],
+                  backgroundColor: const Color(0xFF0F703A),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                 ),
                 onPressed: () {
-                  if (_image == null) {
+                  if (_image == null && _webImage == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Silakan pilih foto daun padi terlebih dahulu!'),
@@ -159,10 +156,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Memproses gambar... Mohon tunggu.'),
-                        backgroundColor: Colors.green,
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ResultScreen(
+                          diseaseName: "Bacterial Leaf Blight",
+                          accuracy: "97.8%",
+                        ),
                       ),
                     );
                   }
